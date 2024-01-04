@@ -1,4 +1,4 @@
-apiVersion: argoproj.io/v1alpha1
+apiVersion: argoproj.io/v1beta1
 kind: Application
 metadata:
   name: bgd-app
@@ -10,11 +10,40 @@ spec:
   project: default
   source:
     path: apps/bgd/overlays/bgd
-    repoURL: https://github.com/rh-mobb/gitops-bgd-app
+    repoURL: https://github.com/rhyspowell/gitops-bgd-app
     targetRevision: main
   syncPolicy:
     automated:
       prune: true
       selfHeal: false
     syncOptions:
-    - CreateNamespace=true
+      - CreateNamespace=true
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rhys-bgd
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ArgoCD
+metadata:
+  name: argocd
+  namespace: rhys-bgd
+spec:
+  server:
+    route:
+      enabled: true
+  destination:
+    namespace: rhys-bgd
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: apps/bgd/overlays/bgd
+    repoURL: https://github.com/rhyspowell/gitops-bgd-app
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true
