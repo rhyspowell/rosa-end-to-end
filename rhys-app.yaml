@@ -1,11 +1,11 @@
-apiVersion: argoproj.io/v1beta1
+apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: bgd-app
   namespace: openshift-gitops
 spec:
   destination:
-    namespace: rhys-app
+    namespace: bgd
     server: https://kubernetes.default.svc
   project: default
   source:
@@ -16,25 +16,74 @@ spec:
     automated:
       prune: true
       selfHeal: false
-    syncOptions:
-      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bgdk-app
+  namespace: openshift-gitops
+spec:
+  destination:
+    namespace: bgdk
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: apps/bgd/overlays/bgdk
+    repoURL: https://github.com/rhyspowell/gitops-bgd-app
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: rhys-bgd
+  name: rhys-argocd
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ArgoCD
 metadata:
-  name: argocd
-  namespace: rhys-bgd
+  name: rhys-argocd
+  namespace: rhys-argocd
 spec:
   server:
     route:
       enabled: true
+      path: /
+      tls:
+        insecureEdgeTerminationPolicy: Redirect
+        termination: passthrough
+      wildcardPolicy: None
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rhys-bgd-app
+  namespace: rhys-argocd
+spec:
   destination:
-    namespace: rhys-bgd
+    namespace: rhys-argocd
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: apps/bgd/overlays/rhys-argocd
+    repoURL: https://github.com/rhyspowell/gitops-bgd-app
+    targetRevision: main
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rhys-argocd-nodeploy
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rhys-bgd-app-nodeploy
+  namespace: rhys-argocd
+spec:
+  destination:
+    namespace: rhys-argocd-nodeploy
     server: https://kubernetes.default.svc
   project: default
   source:
@@ -44,6 +93,4 @@ spec:
   syncPolicy:
     automated:
       prune: true
-      selfHeal: false
-    syncOptions:
-      - CreateNamespace=true
+      selfHeal: true
