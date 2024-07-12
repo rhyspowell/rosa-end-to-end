@@ -2,7 +2,7 @@
 terraform.tfvars
 terraform.tfstate
 terraform.tfstate.*
-*.plan
+*.plan.*
 *.logs
 *.lock.hcl
 .env
