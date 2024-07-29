@@ -1,11 +1,22 @@
-terraform apply
+CLUSTER_NAME="rhys-hcp"
+
+while getopts c: flag
+do
+    case "${flag}" in
+        c) CLUSTER_NAME=${OPTARG};;
+    esac
+done
+
+echo "Apply terraform"
+
+terraform apply -auto-approve
 
 export SUBNET_IDS=$(terraform output -raw cluster-subnets-string)
 
-export REGION=eu-west-1
+REGION=eu-west-2
+VERSION=4.15.8
 
 echo "Check that password is set"
-echo $CLUSTER_PASSWORD
 if [ "${#CLUSTER_PASSWORD}" -lt 14 ]
 then
 	echo "Cluster password not long enough"
@@ -13,49 +24,103 @@ then
 fi
 
 echo "create account roles"
-rosa create account-roles --hosted-cp --mode auto --prefix rhys-hcp  --yes
+rosa create account-roles -f --hosted-cp --mode auto --prefix $CLUSTER_NAME --region $REGION --yes 
 
 echo "create oidc config"
-OIDC_CONFIG_ID=`rosa create oidc-config --mode auto -y --output json | jq -r '.id'`
+OIDC_CONFIG_ID=`rosa create oidc-config --mode auto -y --region $REGION --output json | jq -r '.id'`
+echo $OIDC_CONFIG_ID > oidc_config_id.txt
+
+echo "Create OIDC provider"
+rosa create oidc-provider --oidc-config-id $OIDC_CONFIG_ID --region $REGION --mode auto -y
 
 echo "Create operator roles"
-rosa create operator-roles --prefix rhys-hcp --oidc-config-id $OIDC_CONFIG_ID --hosted-cp --installer-role-arn arn:aws:iam::660250927410:role/rhys-hcp-HCP-ROSA-Installer-Role --mode auto -y
+rosa create operator-roles --prefix $CLUSTER_NAME --oidc-config-id $OIDC_CONFIG_ID --hosted-cp --installer-role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Installer-Role --region $REGION --mode auto -y
 
+echo "Account id $ACCOUNT_ID"
 echo "create cluster"
-rosa create cluster --cluster-name rhys-hcp --sts --role-arn arn:aws:iam::660250927410:role/rhys-hcp-HCP-ROSA-Installer-Role --support-role-arn arn:aws:iam::660250927410:role/rhys-hcp-HCP-ROSA-Support-Role --worker-iam-role arn:aws:iam::660250927410:role/rhys-hcp-HCP-ROSA-Worker-Role --operator-roles-prefix rhys-hcp --oidc-config-id $OIDC_CONFIG_ID --region $REGION --version 4.14.3 --replicas 3 --compute-machine-type m6a.xlarge --subnet-ids $SUBNET_IDS --hosted-cp
+rosa create cluster --cluster-name $CLUSTER_NAME --sts --role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Installer-Role --support-role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Support-Role --worker-iam-role arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Worker-Role --operator-roles-prefix $CLUSTER_NAME --oidc-config-id $OIDC_CONFIG_ID --region $REGION --version $VERSION --replicas 3 --compute-machine-type m6a.xlarge --subnet-ids $SUBNET_IDS --hosted-cp --billing-account $ACCOUNT_ID
 
 echo "watch cluster build"
-rosa logs install -c rhys-hcp --watch
+rosa logs install -c $CLUSTER_NAME  --region $REGION --watch
 
-rosa create admin -c rhys-hcp -p $CLUSTER_PASSWORD 
+rosa create admin -c $CLUSTER_NAME -p "$CLUSTER_PASSWORD" --region $REGION
 
 sleep 60
 
-CLUSTER_API=`rosa describe cluster -c rhys-hcp -o json | jq -r '.api.url'`
+CLUSTER_API=`rosa describe cluster -c $CLUSTER_NAME --region $REGION -o json | jq -r '.api.url'`
 
+sucessful_login="^Login successful*"
 while True
 do
-	response=`oc login $CLUSTER_API --username cluster-admin --password $CLUSTER_PASSWORD -n`
-	if [ $response = ^"Login successful." ]; then
-		break 
+	response=`oc login $CLUSTER_API --username cluster-admin --password $CLUSTER_PASSWORD`
+	echo $response
+	if [[ $response =~ $sucessful_login ]]; then
+		echo "Break"
+		break
 	else
 		sleep 60
 	fi 
 done
 
-oc new-project gitops
+# echo "Create new project"
+# oc new-project gitops
 
-oc apply -f openshift-gitops-sub.yaml
+# echo "Apply RF gitops subscription"
+# oc apply -f ./openshift-gitops-sub.yaml
 
-oc adm policy add-cluster-role-to-user cluster-admin -z openshift-gitops-argocd-application-controller -n openshift-gitops
+# sleep 60
 
-argoURL=$(oc get route openshift-gitops-server -n openshift-gitops -o jsonpath='{.spec.host}{"\n"}')
-echo $argoURL
+# echo "Grab gitops url"
+# argo_route="^openshift-gitops-server-openshift-gitops*"
+# while True
+# do
+# 	argoURL=$(oc get route openshift-gitops-server -n openshift-gitops -o jsonpath='{.spec.host}{"\n"}')
+# 	if [[ $argoURL =~ $argo_route ]]; then
+# 		break
+# 	else
+# 		sleep 10
+# 	fi
+# done
 
-argoPass=$(oc get secret/openshift-gitops-cluster -n openshift-gitops -o jsonpath='{.data.admin\.password}' | base64 -d)
-echo $argoPass
+# echo $argoURL
 
-argocd login --insecure --grpc-web $argoURL  --username admin --password $argoPass
+# echo "Grab gitops password"
+# argoPass=$(oc get secret/openshift-gitops-cluster -n openshift-gitops -o jsonpath='{.data.admin\.password}' | base64 -d)
+# echo $argoPass
 
-oc apply -f rhys-app.yaml
-    
+# echo "Login to argo"
+# argo_logged_in="^'admin:login' logged in successfully*"
+# while True
+# do
+# 	argo_login=$(argocd login --insecure --grpc-web $argoURL  --username admin --password $argoPass)
+# 	if [[ $argo_login =~ $argo_logged_in ]]; then
+# 	echo "Logged in"
+# 		break
+# 	else
+# 		sleep 10
+# 	fi
+# done
+
+# # Set edge reencrypt
+# # https://access.redhat.com/solutions/6041341
+# oc -n openshift-gitops patch argocd/openshift-gitops --type=merge -p='{"spec":{"server":{"route":{"enabled":true,"tls":{"insecureEdgeTerminationPolicy":"Redirect","termination":"reencrypt"}}}}}'
+
+# echo "Apply the gitops"
+# oc apply -f ./rhys-app.yaml
+
+# sleep 30
+# oc -n rhys-argocd patch argocd/rhys-argocd --type=merge -p='{"spec":{"server":{"route":{"enabled":true,"tls":{"insecureEdgeTerminationPolicy":"Redirect","termination":"reencrypt"}}}}}'
+
+echo "Cluster info thats available right now"
+echo "Some end points might not yet be ready"
+echo ""
+dns=`rosa describe cluster -c $CLUSTER_NAME --region $REGION -o json | jq -r .dns.base_domain`
+echo "https://console-openshift-console.apps.rosa.$CLUSTER_NAME$CLUSTER_DOMAIN.$dns"
+echo ""
+echo "Main Argo CD url"
+oc get route openshift-gitops-server -n openshift-gitops -o json | jq -r .spec.host
+oc get secret openshift-gitops-cluster -n openshift-gitops -o jsonpath='{.data.admin\.password}' | base64 -d
+echo ""
+echo "Namespace ArgoCD"
+oc get route rhys-argocd-server -n rhys-argocd -o json | jq -r .spec.host
+oc get secret rhys-argocd-cluster  -n rhys-argocd -o jsonpath='{.data.admin\.password}' | base64 -d
