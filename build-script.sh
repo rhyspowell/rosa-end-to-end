@@ -1,3 +1,17 @@
+#!/bin/bash
+
+# Check if quick_export.sh exists and execute it
+if [ -f "quick_export.sh" ]; then
+    echo "Found quick_export.sh - executing..."
+    source quick_export.sh
+fi
+
+echo $AWS_PROFILE
+echo $AWS_REGION
+echo $RHCS_TOKEN
+echo $CLUSTER_PASSWORD
+echo $CLUSTER_NAME
+
 CLUSTER_NAME="rhys-hcp"
 
 while getopts c: flag
@@ -14,7 +28,7 @@ terraform apply -auto-approve
 export SUBNET_IDS=$(terraform output -raw cluster-subnets-string)
 
 REGION=eu-west-2
-VERSION=4.15.8
+VERSION=4.17.16
 
 echo "Check that password is set"
 if [ "${#CLUSTER_PASSWORD}" -lt 14 ]
@@ -33,10 +47,11 @@ echo $OIDC_CONFIG_ID > oidc_config_id.txt
 echo "Create OIDC provider"
 rosa create oidc-provider --oidc-config-id $OIDC_CONFIG_ID --region $REGION --mode auto -y
 
+ACCOUNT_ID=`aws sts get-caller-identity --query 'Account' --output text`
+echo "Account id $ACCOUNT_ID"
 echo "Create operator roles"
 rosa create operator-roles --prefix $CLUSTER_NAME --oidc-config-id $OIDC_CONFIG_ID --hosted-cp --installer-role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Installer-Role --region $REGION --mode auto -y
 
-echo "Account id $ACCOUNT_ID"
 echo "create cluster"
 rosa create cluster --cluster-name $CLUSTER_NAME --sts --role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Installer-Role --support-role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Support-Role --worker-iam-role arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Worker-Role --operator-roles-prefix $CLUSTER_NAME --oidc-config-id $OIDC_CONFIG_ID --region $REGION --version $VERSION --replicas 3 --compute-machine-type m6a.xlarge --subnet-ids $SUBNET_IDS --hosted-cp --billing-account $ACCOUNT_ID
 
