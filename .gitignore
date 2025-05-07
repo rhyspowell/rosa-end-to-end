@@ -7,3 +7,4 @@ terraform.tfstate.*
 *.lock.hcl
 .env
 oidc_config_id.txt
+quick_export.sh
