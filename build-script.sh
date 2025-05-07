@@ -6,20 +6,37 @@ if [ -f "quick_export.sh" ]; then
     source quick_export.sh
 fi
 
-echo $AWS_PROFILE
-echo $AWS_REGION
-echo $RHCS_TOKEN
-echo $CLUSTER_PASSWORD
-echo $CLUSTER_NAME
-
-CLUSTER_NAME="rhys-hcp"
-
-while getopts c: flag
+while getopts c:r:v:p: flag
 do
     case "${flag}" in
         c) CLUSTER_NAME=${OPTARG};;
+        r) AWS_REGION=${OPTARG};;
+        v) CLUSTER_VERSION=${OPTARG};;
+        p) CLUSTER_PASSWORD=${OPTARG};;
     esac
 done
+
+# Set default cluster name if not already set
+if [ -z "$CLUSTER_NAME" ]; then
+    CLUSTER_NAME="test-hcp"
+fi
+
+# Set default region if not already set
+if [ -z "$AWS_REGION" ]; then
+    AWS_REGION="eu-west-2"
+fi
+
+# Set default version if not already set
+if [ -z "$CLUSTER_VERSION" ]; then
+    CLUSTER_VERSION="4.17.16"
+fi
+
+
+echo "CLUSTER_NAME: $CLUSTER_NAME"
+echo "AWS_REGION: $AWS_REGION"
+echo "CLUSTER_VERSION: $CLUSTER_VERSION"
+
+exit 0
 
 echo "Apply terraform"
 
@@ -27,8 +44,6 @@ terraform apply -auto-approve
 
 export SUBNET_IDS=$(terraform output -raw cluster-subnets-string)
 
-REGION=eu-west-2
-VERSION=4.17.16
 
 echo "Check that password is set"
 if [ "${#CLUSTER_PASSWORD}" -lt 14 ]
@@ -38,31 +53,31 @@ then
 fi
 
 echo "create account roles"
-rosa create account-roles -f --hosted-cp --mode auto --prefix $CLUSTER_NAME --region $REGION --yes 
+rosa create account-roles -f --hosted-cp --mode auto --prefix $CLUSTER_NAME --region $AWS_REGION --yes 
 
 echo "create oidc config"
-OIDC_CONFIG_ID=`rosa create oidc-config --mode auto -y --region $REGION --output json | jq -r '.id'`
+OIDC_CONFIG_ID=`rosa create oidc-config --mode auto -y --region $AWS_REGION --output json | jq -r '.id'`
 echo $OIDC_CONFIG_ID > oidc_config_id.txt
 
 echo "Create OIDC provider"
-rosa create oidc-provider --oidc-config-id $OIDC_CONFIG_ID --region $REGION --mode auto -y
+rosa create oidc-provider --oidc-config-id $OIDC_CONFIG_ID --region $AWS_REGION --mode auto -y
 
 ACCOUNT_ID=`aws sts get-caller-identity --query 'Account' --output text`
 echo "Account id $ACCOUNT_ID"
 echo "Create operator roles"
-rosa create operator-roles --prefix $CLUSTER_NAME --oidc-config-id $OIDC_CONFIG_ID --hosted-cp --installer-role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Installer-Role --region $REGION --mode auto -y
+rosa create operator-roles --prefix $CLUSTER_NAME --oidc-config-id $OIDC_CONFIG_ID --hosted-cp --installer-role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Installer-Role --region $AWS_REGION --mode auto -y
 
 echo "create cluster"
-rosa create cluster --cluster-name $CLUSTER_NAME --sts --role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Installer-Role --support-role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Support-Role --worker-iam-role arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Worker-Role --operator-roles-prefix $CLUSTER_NAME --oidc-config-id $OIDC_CONFIG_ID --region $REGION --version $VERSION --replicas 3 --compute-machine-type m6a.xlarge --subnet-ids $SUBNET_IDS --hosted-cp --billing-account $ACCOUNT_ID
+rosa create cluster --cluster-name $CLUSTER_NAME --sts --role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Installer-Role --support-role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Support-Role --worker-iam-role arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Worker-Role --operator-roles-prefix $CLUSTER_NAME --oidc-config-id $OIDC_CONFIG_ID --region $AWS_REGION --version $CLUSTER_VERSION --replicas 3 --compute-machine-type m6a.xlarge --subnet-ids $SUBNET_IDS --hosted-cp --billing-account $ACCOUNT_ID
 
 echo "watch cluster build"
-rosa logs install -c $CLUSTER_NAME  --region $REGION --watch
+rosa logs install -c $CLUSTER_NAME  --region $AWS_REGION --watch
 
-rosa create admin -c $CLUSTER_NAME -p "$CLUSTER_PASSWORD" --region $REGION
+rosa create admin -c $CLUSTER_NAME -p "$CLUSTER_PASSWORD" --region $AWS_REGION
 
 sleep 60
 
-CLUSTER_API=`rosa describe cluster -c $CLUSTER_NAME --region $REGION -o json | jq -r '.api.url'`
+CLUSTER_API=`rosa describe cluster -c $CLUSTER_NAME --region $AWS_REGION -o json | jq -r '.api.url'`
 
 sucessful_login="^Login successful*"
 while True
