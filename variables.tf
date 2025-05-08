@@ -1,7 +1,7 @@
 variable "vpc_name" {
   type        = string
   description = "The Name of the VPC as applied to AWS"
-  default     = "rhys-vpc"
+  default     = "test-vpc"
 }
 
 variable "vpc_cidr_block" {
@@ -42,6 +42,6 @@ variable "additional_tags" {
   type        = map(string)
   description = "Additional tags for AWS resources as required"
   default = {
-    "Owner" = "Rhys"
+    "Owner" = "test"
   }
 }
