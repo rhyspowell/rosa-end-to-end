@@ -36,8 +36,6 @@ echo "CLUSTER_NAME: $CLUSTER_NAME"
 echo "AWS_REGION: $AWS_REGION"
 echo "CLUSTER_VERSION: $CLUSTER_VERSION"
 
-exit 0
-
 echo "Apply terraform"
 
 terraform apply -auto-approve
