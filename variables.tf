@@ -34,7 +34,7 @@ variable "public_subnet_cidrs" {
 }
 variable "single_nat_gateway" {
   type        = bool
-  description = "Do you want one of a gatgeway for each subnet"
+  description = "Do you want a gateway for each subnet"
   default     = false
 }
 
