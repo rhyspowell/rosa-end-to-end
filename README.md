@@ -6,4 +6,4 @@ HCP requires you to have your VPC and subnets built to allow for installation. I
 
 The script starts with a quick_export.sh file check, thats due to my workflow and the need to set certain settings to make the script run correctly. It is also a file where you can set password, region, cluster name and version. These can also be set, using the -p, -r, -c and -v options into the script. Other than password some defaults have been set in the script.
 
-
+For the terraform build variables.tf contains whats required with some sensible generic defaults. ```terraform.tfvars``` is an easy way to override anything you would want to customise in this area.
