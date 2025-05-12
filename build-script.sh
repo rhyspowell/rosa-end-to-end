@@ -95,54 +95,56 @@ do
 	fi 
 done
 
-# echo "Create new project"
-# oc new-project gitops
+if [ "$ARGO_ENABLED" = true ]; then
+    echo "Create new project"
+    oc new-project gitops
 
-# echo "Apply RF gitops subscription"
-# oc apply -f ./openshift-gitops-sub.yaml
+    echo "Apply RF gitops subscription"
+    oc apply -f ./openshift-gitops-sub.yaml
 
-# sleep 60
+    sleep 60
 
-# echo "Grab gitops url"
-# argo_route="^openshift-gitops-server-openshift-gitops*"
-# while True
-# do
-# 	argoURL=$(oc get route openshift-gitops-server -n openshift-gitops -o jsonpath='{.spec.host}{"\n"}')
-# 	if [[ $argoURL =~ $argo_route ]]; then
-# 		break
-# 	else
-# 		sleep 10
-# 	fi
-# done
+    echo "Grab gitops url"
+    argo_route="^openshift-gitops-server-openshift-gitops*"
+    while True
+    do
+        argoURL=$(oc get route openshift-gitops-server -n openshift-gitops -o jsonpath='{.spec.host}{"\n"}')
+        if [[ $argoURL =~ $argo_route ]]; then
+            break
+        else
+            sleep 10
+        fi
+    done
 
-# echo $argoURL
+    echo $argoURL
 
-# echo "Grab gitops password"
-# argoPass=$(oc get secret/openshift-gitops-cluster -n openshift-gitops -o jsonpath='{.data.admin\.password}' | base64 -d)
-# echo $argoPass
+    echo "Grab gitops password"
+    argoPass=$(oc get secret/openshift-gitops-cluster -n openshift-gitops -o jsonpath='{.data.admin\.password}' | base64 -d)
+    echo $argoPass
 
-# echo "Login to argo"
-# argo_logged_in="^'admin:login' logged in successfully*"
-# while True
-# do
-# 	argo_login=$(argocd login --insecure --grpc-web $argoURL  --username admin --password $argoPass)
-# 	if [[ $argo_login =~ $argo_logged_in ]]; then
-# 	echo "Logged in"
-# 		break
-# 	else
-# 		sleep 10
-# 	fi
-# done
+    echo "Login to argo"
+    argo_logged_in="^'admin:login' logged in successfully*"
+    while True
+    do
+        argo_login=$(argocd login --insecure --grpc-web $argoURL  --username admin --password $argoPass)
+        if [[ $argo_login =~ $argo_logged_in ]]; then
+            echo "Logged in"
+            break
+        else
+            sleep 10
+        fi
+    done
 
-# # Set edge reencrypt
-# # https://access.redhat.com/solutions/6041341
-# oc -n openshift-gitops patch argocd/openshift-gitops --type=merge -p='{"spec":{"server":{"route":{"enabled":true,"tls":{"insecureEdgeTerminationPolicy":"Redirect","termination":"reencrypt"}}}}}'
+    # Set edge reencrypt
+    # https://access.redhat.com/solutions/6041341
+    oc -n openshift-gitops patch argocd/openshift-gitops --type=merge -p='{"spec":{"server":{"route":{"enabled":true,"tls":{"insecureEdgeTerminationPolicy":"Redirect","termination":"reencrypt"}}}}}'
 
-# echo "Apply the gitops"
-# oc apply -f ./rhys-app.yaml
+    echo "Apply the gitops"
+    oc apply -f ./rhys-app.yaml
 
-# sleep 30
-# oc -n rhys-argocd patch argocd/rhys-argocd --type=merge -p='{"spec":{"server":{"route":{"enabled":true,"tls":{"insecureEdgeTerminationPolicy":"Redirect","termination":"reencrypt"}}}}}'
+    sleep 30
+    oc -n rhys-argocd patch argocd/rhys-argocd --type=merge -p='{"spec":{"server":{"route":{"enabled":true,"tls":{"insecureEdgeTerminationPolicy":"Redirect","termination":"reencrypt"}}}}}'
+fi
 
 echo "Cluster info thats available right now"
 echo "Some end points might not yet be ready"
