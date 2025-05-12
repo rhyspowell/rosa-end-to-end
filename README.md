@@ -11,3 +11,7 @@ For the terraform build variables.tf contains whats required with some sensible 
 ### Destroy Script
 
 This will allow you to clean up the cluster build. Should the build script fail its recommended that this be run to make sure everything is deployed in a clean fashion.
+
+### ArgoCD - The power of the platform
+
+ArgoCD bring the power to the cluster, this is key to the multi/hybrid cloud environment and is the key to removing many of the issues that are normally associated with DR. The option to deploy it here comes with the ```-a```. This example is really just that, nothing complex, just here to give yo uan idea of how the cluster can be built out in a controlled manner, using code.
