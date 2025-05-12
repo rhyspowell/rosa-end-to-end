@@ -1,11 +1,29 @@
-export AWS_REGION=eu-west-2
-CLUSTER_NAME="rhys-hcp"
-while getopts c: flag
+#!/bin/bash
+
+# Check if quick_export.sh exists and execute it
+if [ -f "quick_export.sh" ]; then
+    echo "Found quick_export.sh - executing..."
+    source quick_export.sh
+fi
+
+while getopts c:r: flag
 do
     case "${flag}" in
         c) CLUSTER_NAME=${OPTARG};;
+        r) AWS_REGION=${OPTARG};;
     esac
 done
+
+# Set default cluster name if not already set
+if [ -z "$CLUSTER_NAME" ]; then
+    CLUSTER_NAME="test-hcp"
+fi
+
+# Set default region if not already set
+if [ -z "$AWS_REGION" ]; then
+    AWS_REGION="eu-west-2"
+fi
+
 
 # oidc_config_id=`rosa describe cluster -c rhys-hcp -o json | jq -r .aws.sts.oidc_config.id`
 oidc_config_id=`cat oidc_config_id.txt`
