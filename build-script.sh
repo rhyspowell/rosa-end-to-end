@@ -6,7 +6,7 @@ if [ -f "quick_export.sh" ]; then
     source quick_export.sh
 fi
 
-while getopts c:r:v:p:t: flag
+while getopts c:r:v:p:t:a flag
 do
     case "${flag}" in
         c) CLUSTER_NAME=${OPTARG};;
@@ -14,6 +14,7 @@ do
         v) CLUSTER_VERSION=${OPTARG};;
         p) CLUSTER_PASSWORD=${OPTARG};;
         t) TAGS=${OPTARG};;
+        a) ARGO_ENABLED=true;;
     esac
 done
 
@@ -146,7 +147,7 @@ done
 echo "Cluster info thats available right now"
 echo "Some end points might not yet be ready"
 echo ""
-dns=`rosa describe cluster -c $CLUSTER_NAME --region $REGION -o json | jq -r .dns.base_domain`
+dns=`rosa describe cluster -c $CLUSTER_NAME -o json | jq -r .dns.base_domain`
 echo "https://console-openshift-console.apps.rosa.$CLUSTER_NAME$CLUSTER_DOMAIN.$dns"
 echo ""
 echo "Main Argo CD url"
