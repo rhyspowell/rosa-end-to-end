@@ -1,4 +1,4 @@
-apiVersion: argoproj.io/v1alpha1
+apiVersion: argoproj.io/v1beta1
 kind: Application
 metadata:
   name: bgd-app
@@ -17,7 +17,7 @@ spec:
       prune: true
       selfHeal: false
 ---
-apiVersion: argoproj.io/v1alpha1
+apiVersion: argoproj.io/v1beta1
 kind: Application
 metadata:
   name: bgdk-app
@@ -41,7 +41,7 @@ kind: Namespace
 metadata:
   name: rhys-argocd
 ---
-apiVersion: argoproj.io/v1alpha1
+apiVersion: argoproj.io/v1beta1
 kind: ArgoCD
 metadata:
   name: rhys-argocd
@@ -56,7 +56,7 @@ spec:
         termination: passthrough
       wildcardPolicy: None
 ---
-apiVersion: argoproj.io/v1alpha1
+apiVersion: argoproj.io/v1beta1
 kind: Application
 metadata:
   name: rhys-bgd-app
