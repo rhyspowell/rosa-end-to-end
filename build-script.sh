@@ -70,7 +70,7 @@ echo "Create operator roles"
 rosa create operator-roles --prefix $CLUSTER_NAME --oidc-config-id $OIDC_CONFIG_ID --hosted-cp --installer-role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Installer-Role --region $AWS_REGION --mode auto -y
 
 echo "create cluster"
-rosa create cluster --cluster-name $CLUSTER_NAME --sts --role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Installer-Role --support-role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Support-Role --worker-iam-role arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Worker-Role --operator-roles-prefix $CLUSTER_NAME --oidc-config-id $OIDC_CONFIG_ID --region $AWS_REGION --version $CLUSTER_VERSION --replicas 3 --compute-machine-type m6a.xlarge --subnet-ids $SUBNET_IDS --hosted-cp --billing-account $ACCOUNT_ID --tags $TAGS
+rosa create cluster --cluster-name $CLUSTER_NAME --sts --role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Installer-Role --support-role-arn arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Support-Role --worker-iam-role arn:aws:iam::$ACCOUNT_ID:role/$CLUSTER_NAME-HCP-ROSA-Worker-Role --operator-roles-prefix $CLUSTER_NAME --oidc-config-id $OIDC_CONFIG_ID --region $AWS_REGION --version $CLUSTER_VERSION --replicas 3 --compute-machine-type m6a.xlarge --subnet-ids $SUBNET_IDS --hosted-cp --billing-account $ACCOUNT_ID --tags="$TAGS"
 
 echo "watch cluster build"
 rosa logs install -c $CLUSTER_NAME  --region $AWS_REGION --watch
