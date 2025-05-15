@@ -95,11 +95,13 @@ do
 	fi 
 done
 
-if [ "$ARGO_ENABLED" = true ]; then
-    echo "Create new project"
-    oc new-project gitops
+# Add additional users to the cluster
+ocm create idp -t htpasswd -c $CLUSTER_NAME -n developer-dave --username developer-dave --password $CLUSTER_PASSWORD
+ocm create idp -t htpasswd -c $CLUSTER_NAME -n developer-dan --username developer-dan --password $CLUSTER_PASSWORD
 
-    echo "Apply RF gitops subscription"
+if [ "$ARGO_ENABLED" = true ]; then
+
+    echo "Apply RH gitops subscription"
     oc apply -f ./openshift-gitops-sub.yaml
 
     sleep 60
@@ -137,13 +139,14 @@ if [ "$ARGO_ENABLED" = true ]; then
 
     # Set edge reencrypt
     # https://access.redhat.com/solutions/6041341
+	# Apparently fix no longer needed as of v1.13
     oc -n openshift-gitops patch argocd/openshift-gitops --type=merge -p='{"spec":{"server":{"route":{"enabled":true,"tls":{"insecureEdgeTerminationPolicy":"Redirect","termination":"reencrypt"}}}}}'
 
-    echo "Apply the gitops"
-    oc apply -f ./rhys-app.yaml
+    echo "Apply the bootstrap"
+    oc apply -f demo.yaml
 
-    sleep 30
-    oc -n rhys-argocd patch argocd/rhys-argocd --type=merge -p='{"spec":{"server":{"route":{"enabled":true,"tls":{"insecureEdgeTerminationPolicy":"Redirect","termination":"reencrypt"}}}}}'
+    sleep 60
+    # oc -n rhys-argocd patch argocd/rhys-argocd --type=merge -p='{"spec":{"server":{"route":{"enabled":true,"tls":{"insecureEdgeTerminationPolicy":"Redirect","termination":"reencrypt"}}}}}'
 fi
 
 echo "Cluster info thats available right now"
@@ -152,10 +155,16 @@ echo ""
 dns=`rosa describe cluster -c $CLUSTER_NAME -o json | jq -r .dns.base_domain`
 echo "https://console-openshift-console.apps.rosa.$CLUSTER_NAME$CLUSTER_DOMAIN.$dns"
 echo ""
-echo "Main Argo CD url"
-oc get route openshift-gitops-server -n openshift-gitops -o json | jq -r .spec.host
-oc get secret openshift-gitops-cluster -n openshift-gitops -o jsonpath='{.data.admin\.password}' | base64 -d
-echo ""
-echo "Namespace ArgoCD"
-oc get route rhys-argocd-server -n rhys-argocd -o json | jq -r .spec.host
-oc get secret rhys-argocd-cluster  -n rhys-argocd -o jsonpath='{.data.admin\.password}' | base64 -d
+if [ "$ARGO_ENABLED" = true ]; then
+	echo "Main Argo CD url"
+	oc get route openshift-gitops-server -n openshift-gitops -o json | jq -r .spec.host
+	oc get secret openshift-gitops-cluster -n openshift-gitops -o jsonpath='{.data.admin\.password}' | base64 -d
+	# echo ""
+	# echo "Developer Dave ArgoCD"
+	# oc get route developer-dave-argocd-server -n developer-dave -o json | jq -r .spec.host
+	# oc get secret developer-dave-argocd-cluster  -n developer-dave -o jsonpath='{.data.admin\.password}' | base64 -d
+    # echo ""
+	# echo "Developer Dan ArgoCD"
+	# oc get route developer-dan-argocd-server -n developer-dan -o json | jq -r .spec.host
+	# oc get secret developer-dan-argocd-cluster  -n developer-dan -o jsonpath='{.data.admin\.password}' | base64 -d
+fi
