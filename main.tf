@@ -41,6 +41,6 @@ output "cluster-public-subnets" {
 }
 
 output "cluster-subnets-string" {
-  value       = join(",", concat(module.vpc.public_subnets, module.vpc.private_subnets))
+  value       = join(",", concat(module.vpc.private_subnets))
   description = "Comma-separated string of all subnet IDs created for this cluster."
 }
