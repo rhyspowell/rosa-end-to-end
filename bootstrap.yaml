@@ -4,16 +4,11 @@ kind: Namespace
 metadata:
   name: developer-dan
 ---
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: developer-dave
----
 apiVersion: argoproj.io/v1beta1
 kind: ArgoCD
 metadata:
   name: developer-dan
-  namespace: openshift-gitops-operator
+  namespace: developer-dan
 spec:
   server:
     autoscale:
@@ -137,47 +132,47 @@ spec:
           memory: 128Mi
     provider: dex
 ---
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: developer-dave-build
-  namespace: openshift-gitops
-spec:
-  destination:
-    namespace: developer-dave
-    server: https://kubernetes.default.svc
-  project: default
-  source:
-    path: developer-dave
-    repoURL: https://github.com/rhyspowell/rosa-end-to-end-core
-    targetRevision: main
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: developer-dan-build
-  namespace: openshift-gitops
-spec:
-  destination:
-    namespace: developer-dan
-    server: https://kubernetes.default.svc
-  project: default
-  source:
-    path: developer-dan
-    repoURL: https://github.com/rhyspowell/rosa-end-to-end-core
-    targetRevision: main
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: developer-dave-build
+#   namespace: openshift-gitops
+# spec:
+#   destination:
+#     namespace: developer-dave
+#     server: https://kubernetes.default.svc
+#   project: default
+#   source:
+#     path: developer-dave
+#     repoURL: https://github.com/rhyspowell/rosa-end-to-end-core
+#     targetRevision: main
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+# ---
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: developer-dan-build
+#   namespace: openshift-gitops
+# spec:
+#   destination:
+#     namespace: developer-dan
+#     server: https://kubernetes.default.svc
+#   project: default
+#   source:
+#     path: developer-dan
+#     repoURL: https://github.com/rhyspowell/rosa-end-to-end-core
+#     targetRevision: main
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
 # ---
 # apiVersion: argoproj.io/v1alpha1
 # kind: Application
