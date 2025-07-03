@@ -139,7 +139,7 @@ if [ "$ARGO_ENABLED" = true ]; then
 
     # Set edge reencrypt
     # https://access.redhat.com/solutions/6041341
-	# Apparently fix no longer needed as of v1.13
+	# Apparently fix no longer needed as of v1.13, this was wring but should be in the soon release
     oc -n openshift-gitops patch argocd/openshift-gitops --type=merge -p='{"spec":{"server":{"route":{"enabled":true,"tls":{"insecureEdgeTerminationPolicy":"Redirect","termination":"reencrypt"}}}}}'
 
     echo "Apply the bootstrap"
