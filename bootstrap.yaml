@@ -1,211 +1,60 @@
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: developer-dan
----
-apiVersion: argoproj.io/v1beta1
-kind: ArgoCD
-metadata:
-  name: developer-dan
-  namespace: developer-dan
-spec:
-  server:
-    autoscale:
-      enabled: false
-    grpc:
-      ingress:
-        enabled: false
-    ingress:
-      enabled: false
-    resources:
-      limits:
-        cpu: 500m
-        memory: 256Mi
-      requests:
-        cpu: 125m
-        memory: 128Mi
-    route:
-      enabled: true
-    service:
-      type: ""
-  grafana:
-    enabled: false
-    ingress:
-      enabled: false
-    route:
-      enabled: false
-  monitoring:
-    enabled: false
-  notifications:
-    enabled: false
-  prometheus:
-    enabled: false
-    ingress:
-      enabled: false
-    route:
-      enabled: false
-  initialSSHKnownHosts: {}
-  sso:
-    dex:
-      openShiftOAuth: true
-      resources:
-        limits:
-          cpu: 500m
-          memory: 256Mi
-        requests:
-          cpu: 250m
-          memory: 128Mi
-    provider: dex
-  rbac:
-    defaultPolicy: ""
-    policy: |
-      g, system:cluster-admins, role:admin
-    scopes: "[groups]"
-  repo:
-    resources:
-      limits:
-        cpu: "1"
-        memory: 1Gi
-      requests:
-        cpu: 250m
-        memory: 256Mi
-  resourceExclusions: |
-    - apiGroups:
-      - tekton.dev
-      clusters:
-      - '*'
-      kinds:
-      - TaskRun
-      - PipelineRun
-  ha:
-    enabled: false
-    resources:
-      limits:
-        cpu: 500m
-        memory: 256Mi
-      requests:
-        cpu: 250m
-        memory: 128Mi
-  tls:
-    ca: {}
-  redis:
-    resources:
-      limits:
-        cpu: 500m
-        memory: 256Mi
-      requests:
-        cpu: 250m
-        memory: 128Mi
-  controller:
-    processors: {}
-    resources:
-      limits:
-        cpu: "2"
-        memory: 2Gi
-      requests:
-        cpu: 250m
-        memory: 1Gi
-    sharding: {}
----
 apiVersion: argoproj.io/v1alpha1
-kind: ArgoCD
+kind: ApplicationSet
 metadata:
-  name: developer-dan
-  namespace: developer-dan
+  name: bootstrap
+  namespace: openshift-gitops
 spec:
-  server:
-    route:
-      enabled: true
-      tls:
-        insecureEdgeTerminationPolicy: Redirect
-        termination: edge
-  sso:
-    dex:
-      openShiftOAuth: true
-      resources:
-        limits:
-          cpu: 500m
-          memory: 256Mi
-        requests:
-          cpu: 250m
-          memory: 128Mi
-    provider: dex
----
-# apiVersion: argoproj.io/v1alpha1
-# kind: Application
-# metadata:
-#   name: developer-dave-build
-#   namespace: openshift-gitops
-# spec:
-#   destination:
-#     namespace: developer-dave
-#     server: https://kubernetes.default.svc
-#   project: default
-#   source:
-#     path: developer-dave
-#     repoURL: https://github.com/rhyspowell/rosa-end-to-end-core
-#     targetRevision: main
-#   syncPolicy:
-#     automated:
-#       prune: true
-#       selfHeal: true
-#     syncOptions:
-#       - CreateNamespace=true
-# ---
-# apiVersion: argoproj.io/v1alpha1
-# kind: Application
-# metadata:
-#   name: developer-dan-build
-#   namespace: openshift-gitops
-# spec:
-#   destination:
-#     namespace: developer-dan
-#     server: https://kubernetes.default.svc
-#   project: default
-#   source:
-#     path: developer-dan
-#     repoURL: https://github.com/rhyspowell/rosa-end-to-end-core
-#     targetRevision: main
-#   syncPolicy:
-#     automated:
-#       prune: true
-#       selfHeal: true
-#     syncOptions:
-#       - CreateNamespace=true
-# ---
-# apiVersion: argoproj.io/v1alpha1
-# kind: Application
-# metadata:
-#   name: devspaces
-# spec:
-#   destination:
-#     namespace: devspaces
-#     server: https://kubernetes.default.svc
-#   project: default
-#   source:
-#     path: devspaces/aggregate/overlays/allow-autoscaling
-#     repoURL: https://github.com/rhyspowell/rosa-end-to-end-core
-#     targetRevision: main
-#   syncPolicy:
-#     automated:
-#       prune: true
-#       selfHeal: true
-# ---
-# apiVersion: argoproj.io/v1alpha1
-# kind: Application
-# metadata:
-#   name: devspaces
-# spec:
-#   destination:
-#     namespace: devspaces
-#     server: https://kubernetes.default.svc
-#   project: default
-#   source:
-#     path: additional-tooling
-#     repoURL: https://github.com/rhyspowell/rosa-end-to-end-core
-#     targetRevision: main
-#   syncPolicy:
-#     automated:
-#       prune: true
-#       selfHeal: true
+  generators:
+    - list:
+        elements:
+          - cluster: in-cluster
+            name: core-cluster
+            repoURL: https://github.com/rhyspowell/rosa-end-to-end-core.git
+            targetRevision: main
+            path: core_cluster
+          # - cluster: in-cluster
+          #   name: ic-shared-llm-app
+          #   repoURL: https://github.com/paulczar/parasol-insurance.git
+          #   targetRevision: dev
+          #   path: bootstrap/ic-shared-llm
+          # - cluster: in-cluster
+          #   name: ic-shared-img-det
+          #   repoURL: https://github.com/paulczar/parasol-insurance.git
+          #   targetRevision: dev
+          #   path: bootstrap/ic-shared-img-det
+          # - cluster: in-cluster
+          #   name: ic-rhoai-configuration
+          #   repoURL: https://github.com/paulczar/parasol-insurance.git
+          #   targetRevision: dev
+          #   path: bootstrap/ic-rhoai-configuration
+          # - cluster: in-cluster
+          #   name: ic-user-projects
+          #   repoURL: https://github.com/paulczar/parasol-insurance.git
+          #   targetRevision: dev
+          #   path: bootstrap/ic-user-projects
+          # - cluster: in-cluster
+          #   name: ic-shared-app
+          #   repoURL: https://github.com/paulczar/parasol-insurance.git
+          #   targetRevision: dev
+          #   path: bootstrap/ic-shared-app
+  template:
+    metadata:
+      name: "{{name}}"
+      namespace: openshift-gitops
+      labels:
+        component: bootstrap
+        purpose: "{{name}}"
+    spec:
+      project: default
+      source:
+        repoURL: "{{repoURL}}"
+        targetRevision: "{{targetRevision}}"
+        path: "{{path}}"
+      destination:
+        server: "https://kubernetes.default.svc"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - RespectIgnoreDifferences=true
