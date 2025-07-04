@@ -30,7 +30,7 @@ fi
 
 # Set default version if not already set
 if [ -z "$CLUSTER_VERSION" ]; then
-    CLUSTER_VERSION="4.17.16"
+    CLUSTER_VERSION="4.19.1"
 fi
 
 if [ -z "$TAGS" ]; then
@@ -143,7 +143,7 @@ if [ "$ARGO_ENABLED" = true ]; then
     oc -n openshift-gitops patch argocd/openshift-gitops --type=merge -p='{"spec":{"server":{"route":{"enabled":true,"tls":{"insecureEdgeTerminationPolicy":"Redirect","termination":"reencrypt"}}}}}'
 
     echo "Apply the bootstrap"
-    oc apply -f demo.yaml
+    oc apply -f bootstrap.yaml
 
     sleep 60
     # oc -n rhys-argocd patch argocd/rhys-argocd --type=merge -p='{"spec":{"server":{"route":{"enabled":true,"tls":{"insecureEdgeTerminationPolicy":"Redirect","termination":"reencrypt"}}}}}'
