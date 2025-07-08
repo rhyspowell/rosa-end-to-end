@@ -11,12 +11,12 @@ spec:
             name: core-cluster
             repoURL: https://github.com/rhyspowell/rosa-end-to-end-core.git
             targetRevision: main
-            path: core_cluster
-          # - cluster: in-cluster
-          #   name: devspaces
-          #   repoURL: https://github.com/rhyspowell/rosa-end-to-end-core.git
-          #   targetRevision: main
-          #   path: devspaces
+            path: core-cluster
+          - cluster: in-cluster
+            name: devspaces
+            repoURL: https://github.com/rhyspowell/rosa-end-to-end-core.git
+            targetRevision: main
+            path: devspaces
   template:
     metadata:
       name: "{{name}}"
