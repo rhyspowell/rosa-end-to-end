@@ -30,7 +30,7 @@ fi
 
 # Set default version if not already set
 if [ -z "$CLUSTER_VERSION" ]; then
-    CLUSTER_VERSION="4.19.1"
+    CLUSTER_VERSION="4.19.2"
 fi
 
 if [ -z "$TAGS" ]; then
@@ -53,6 +53,13 @@ if [ "${#CLUSTER_PASSWORD}" -lt 14 ]
 then
 	echo "Cluster password not long enough"
 	exit 255
+fi
+
+echo "Check that you are logged into ocm"
+OCM_WHOAMI_OUTPUT=$(ocm whoami 2>&1 || true)
+if [[ $OCM_WHOAMI_OUTPUT == Error* ]]; then
+    echo "You are not logged into OCM: $OCM_WHOAMI_OUTPUT"
+    exit 255
 fi
 
 echo "create account roles"
