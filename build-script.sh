@@ -41,6 +41,9 @@ echo "CLUSTER_NAME: $CLUSTER_NAME"
 echo "AWS_REGION: $AWS_REGION"
 echo "CLUSTER_VERSION: $CLUSTER_VERSION"
 
+echo "Get terrafrom ready"
+terraform init -upgrade
+
 echo "Apply terraform"
 
 terraform apply -auto-approve
@@ -59,8 +62,10 @@ echo "Check that you are logged into ocm"
 OCM_WHOAMI_OUTPUT=$(ocm whoami 2>&1 || true)
 if [[ $OCM_WHOAMI_OUTPUT == Error* ]]; then
     echo "You are not logged into OCM: $OCM_WHOAMI_OUTPUT"
-    exit 255
+    echo "Lets get you logged in. You will need to use your browser to login."
+    ocm login --use-auth-code
 fi
+
 
 echo "create account roles"
 rosa create account-roles -f --hosted-cp --mode auto --prefix $CLUSTER_NAME --region $AWS_REGION --yes 
