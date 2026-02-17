@@ -45,6 +45,6 @@ rosa delete account-roles --hosted-cp --mode auto --prefix $CLUSTER_NAME -y
 rosa delete oidc-provider --oidc-config-id $oidc_config_id --mode auto -y
 rosa delete oidc-config --oidc-config-id $oidc_config_id --mode auto -y
 
-#rm oidc_config_id.txt
+rm oidc_config_id.txt
 
 terraform destroy -auto-approve
