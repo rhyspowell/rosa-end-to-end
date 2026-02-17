@@ -24,6 +24,13 @@ if [ -z "$AWS_REGION" ]; then
     AWS_REGION="eu-west-2"
 fi
 
+echo "Check that you are logged into ocm"
+OCM_WHOAMI_OUTPUT=$(ocm whoami 2>&1 || true)
+if [[ $OCM_WHOAMI_OUTPUT == Error* ]]; then
+    echo "You are not logged into OCM: $OCM_WHOAMI_OUTPUT"
+    echo "Lets get you logged in. You will need to use your browser to login."
+    ocm login --use-auth-code
+fi
 
 # oidc_config_id=`rosa describe cluster -c rhys-hcp -o json | jq -r .aws.sts.oidc_config.id`
 oidc_config_id=`cat oidc_config_id.txt`
@@ -38,6 +45,6 @@ rosa delete account-roles --hosted-cp --mode auto --prefix $CLUSTER_NAME -y
 rosa delete oidc-provider --oidc-config-id $oidc_config_id --mode auto -y
 rosa delete oidc-config --oidc-config-id $oidc_config_id --mode auto -y
 
-rm oidc_config_id.txt
+#rm oidc_config_id.txt
 
 terraform destroy -auto-approve
