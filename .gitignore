@@ -8,3 +8,7 @@ terraform.tfstate.*
 .env
 oidc_config_id.txt
 quick_export.sh
+openshift-virt/rhel-10.kvm.qcow2
+openshift-virt/output/
+openshift-virt/.packer-ssh/
+openshift-virt/.tools/

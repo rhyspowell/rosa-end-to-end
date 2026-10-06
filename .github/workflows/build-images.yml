@@ -1,0 +1,49 @@
+# Copy into another repo: set these GitHub Actions variables (repo or environment image-publish):
+#   ALLOWED_ACTOR       GitHub username allowed to click Run
+#   ALLOWED_REPOSITORY  owner/repo allowed to run (example: rhyspowell/rosa-end-to-end)
+#   AWS_ROLE_ARN        IAM role trusted for GitHub OIDC
+#   AWS_REGION          default eu-west-2
+#   ECR_REPOSITORY      default rhel10-nginx
+# Also: Environment "image-publish" with required reviewers; self-hosted runner label "kvm".
+
+name: Build images
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Image builder target
+        type: choice
+        options:
+          - all
+          - ami
+          - qcow2
+          - push
+        default: all
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build:
+    if: ${{ vars.ALLOWED_ACTOR != '' && vars.ALLOWED_REPOSITORY != '' && github.actor == vars.ALLOWED_ACTOR && github.repository == vars.ALLOWED_REPOSITORY }}
+    environment: image-publish
+    runs-on: [self-hosted, kvm]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-west-2' }}
+
+      - name: Build / publish
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION || 'eu-west-2' }}
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'rhel10-nginx' }}
+        run: |
+          chmod +x openshift-virt/image_builder.sh
+          ./openshift-virt/image_builder.sh "${{ inputs.target }}"

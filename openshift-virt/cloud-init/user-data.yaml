@@ -1,0 +1,10 @@
+#cloud-config
+# Render with: ./image_builder.sh userdata <name>
+# Same blob for EC2 --user-data and KubeVirt cloudInitNoCloud.userData
+write_files:
+  - path: /etc/nginx-display-name.json
+    permissions: "0644"
+    content: |
+      __NAME_JSON__
+runcmd:
+  - python3 -c 'import json; p="/usr/share/nginx/html/index.html"; n=json.load(open("/etc/nginx-display-name.json")); t=open(p).read(); open(p,"w").write(t.replace("{{name}}", n))'
