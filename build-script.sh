@@ -24,6 +24,7 @@ for arg in "$@"; do
     case "$arg" in
         --openshift-gitops) OPENSHIFT_GITOPS_ENABLED=true ;;
         --openshift-ai) OPENSHIFT_AI_ENABLED=true ;;
+        --terraform-only) TERRAFORM_ONLY=true ;;
         *) ARGS+=("$arg") ;;
     esac
 done
@@ -77,6 +78,11 @@ terraform apply -auto-approve
 
 export SUBNET_IDS=$(terraform output -raw cluster-subnets-string)
 
+if [ "$TERRAFORM_ONLY" = true ]; then
+    echo "Terraform-only mode: skipping ROSA cluster creation"
+    echo "SUBNET_IDS: $SUBNET_IDS"
+    exit 0
+fi
 
 echo "Check that password is set"
 if [ "${#CLUSTER_PASSWORD}" -lt 14 ]
